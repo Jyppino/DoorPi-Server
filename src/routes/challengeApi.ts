@@ -52,12 +52,15 @@ router.post('/challenge', [body('publicKey').isString(), body('registration').is
   );
 });
 
+const spawn = require('child_process').spawn;
+
 // Route to unlock with key
 router.post('/unlock', [body('publicKey').isString(), body('answer').notEmpty()], validate, verifyChallenge, function(
   req: Request,
   res: Response
 ): void {
-  // TODO: UNLOCK DOOR
+  // const pythonProcess = spawn('python',["./unlock_door.py"]);
+
   res.json({ success: true });
 });
 
