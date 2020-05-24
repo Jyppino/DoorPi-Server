@@ -1,13 +1,10 @@
 import { createConnection } from 'typeorm';
 import { Key } from './entities';
-import path from 'path';
-
-const dbPath = `${path.resolve(__dirname, '../..')}/db.sqlite`;
-const dbTestPath = `${path.resolve(__dirname, '../..')}/db-test.sqlite`;
+import { databasePath } from './config';
 
 createConnection({
   type: 'sqlite',
-  database: process.env.NODE_ENV == 'TEST' ? dbTestPath : dbPath,
+  database: process.env.NODE_ENV == 'TEST' ? databasePath.test : databasePath.regular,
   logging: false,
   entities: [Key]
 })

@@ -5,13 +5,12 @@ Repository for the server side of the DoorPi project.
 ### Prerequisites
 
 - Node and NPM
-- MongoDB
+- SQLite
 - `npm install` to install required packages
 
-### Starting
+### Useful commands
 
-<pre><code>npm start</code></pre>
-
-### Tests
-
-<pre><code>npm run test</code></pre>
+- `npm start` to run TypeScript files
+- `npm run build` to build TypeScript files
+- `node build/src/server.js` to run JavaScript files
+- `npm run test` to run tests
