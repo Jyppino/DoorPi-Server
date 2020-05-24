@@ -65,14 +65,16 @@ router.post('/challenge', [body('publicKey').isString(), body('registration').is
 });
 
 const spawn = require('child_process').spawn;
+const isProduction = process.env.NODE_ENV == 'PRODUCTION';
 
 // Route to unlock with key
 router.post('/unlock', [body('publicKey').isString(), body('answer').notEmpty()], validate, verifyChallenge, function(
   req: Request,
   res: Response
 ): void {
-  // const pythonProcess = spawn('python',["./unlock_door.py"]);
-
+  if (isProduction) {
+    spawn('python', ['./unlock_door.py']);
+  }
   res.json({ success: true });
 });
 
