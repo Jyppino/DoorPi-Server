@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { createLogger, format, transports } from 'winston';
+import { logPath } from '../config/config';
 
 // datetime | request method | response status | message | url | IP | User-Agent
 const defaultFormat = format.printf(({ method, status, message, url, ip, userAgent }) => {
@@ -15,7 +16,7 @@ export const logger = createLogger({
     new transports.Console({ silent, level: 'info', format: format.combine(format.colorize(), defaultFormat) }),
     new transports.File({
       silent,
-      filename: 'logs/info.log',
+      filename: logPath,
       level: 'info',
       maxsize: 5242880, // 5MB
       maxFiles: 5
