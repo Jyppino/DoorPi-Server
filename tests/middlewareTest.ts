@@ -1,6 +1,7 @@
 process.env.NODE_ENV = 'TEST';
 
-import { Key } from '../src/config/models';
+import { getRepository } from 'typeorm';
+import { Key } from '../src/config/entities';
 import chai = require('chai');
 import { verifyChallenge } from '../src/middleware';
 import { Request, Response, NextFunction } from 'express';
@@ -25,10 +26,18 @@ const testKeys = [
 describe('Middleware (UNIT)', function() {
   describe('Challenge Verification', function() {
     before(function(done) {
-      Key.collection.insertMany(testKeys, function(err, keys) {
-        if (err) return done(err);
-        done();
-      }); // Create temp test keys for the different tests
+      const keyQueryBuilder = getRepository(Key).createQueryBuilder();
+
+      keyQueryBuilder
+        .insert()
+        .values(testKeys)
+        .execute()
+        .then(() => {
+          done();
+        })
+        .catch(err => {
+          done(err);
+        }); // Create temp test keys for the different tests
     });
 
     it('challengeVerify should provide an error if unknown key', function(done) {

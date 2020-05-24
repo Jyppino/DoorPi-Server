@@ -3,19 +3,26 @@ process.env.NODE_ENV = 'TEST';
 import chai = require('chai');
 import app from '../src/server';
 import { serverSettings } from '../src/config/config';
-import { Key, KeyDocument } from '../src/config/models';
+import { getRepository } from 'typeorm';
+import { Key } from '../src/config/entities';
 
 const expect = chai.expect;
 let publicKey = '';
 
 describe('Server API (UNIT)', function() {
   before(function(done) {
-    Key.find({}, function(err, keys: KeyDocument[]) {
-      if (err) return done(err);
-      expect(keys.length).to.be.at.least(1);
-      publicKey = keys[0].publicKey;
-      done();
-    });
+    const keyRepo = getRepository(Key);
+
+    keyRepo
+      .find({})
+      .then(keys => {
+        expect(keys.length).to.be.at.least(1);
+        publicKey = keys[0].publicKey;
+        done();
+      })
+      .catch(err => {
+        done(err);
+      });
   });
 
   it('Should be able to request server settings', function(done) {

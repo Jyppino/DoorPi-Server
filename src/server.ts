@@ -4,9 +4,11 @@ import * as http from 'http';
 import * as bodyParser from 'body-parser';
 import * as path from 'path';
 
-import './config/db'; // Initialise database connection
+import './config/database'; // Initialise database connection
 import { challengeAuthRoute, serverApi } from './routes';
 import { errorHandler, httpLogger } from './middleware';
+
+import 'reflect-metadata';
 
 const port = process.env.PORT || '3000';
 const app = express();

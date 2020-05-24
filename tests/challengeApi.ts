@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 process.env.NODE_ENV = 'TEST';
 
 import chai = require('chai');
 import app from '../src/server';
-import { Key, KeyDocument } from '../src/config/models';
+import { getRepository } from 'typeorm';
+import { Key } from '../src/config/entities';
 import forge from 'node-forge';
 
 const expect = chai.expect;
@@ -56,6 +58,7 @@ describe('Challenge Authentication (E2E)', function() {
 
   describe('Registration', function() {
     it('Should be able to register if first key to register', function(done) {
+      const keyRepo = getRepository(Key);
       chai
         .request(app)
         .post('/register')
@@ -66,11 +69,16 @@ describe('Challenge Authentication (E2E)', function() {
           res.body.should.be.a('object');
           expect(res.body).to.have.property('success');
           expect(res.body['success']).to.be.true;
-          Key.find({}, function(err, keys) {
-            if (err) return done(err);
-            expect(keys).to.be.length(1);
-            done();
-          });
+
+          keyRepo
+            .find({})
+            .then(keys => {
+              expect(keys).to.be.length(1);
+              done();
+            })
+            .catch(err => {
+              done(err);
+            });
         });
     });
 
@@ -110,6 +118,7 @@ describe('Challenge Authentication (E2E)', function() {
           md: forge.md.sha1.create()
         }
       });
+      const keyRepo = getRepository(Key);
       chai
         .request(app)
         .post('/register')
@@ -120,11 +129,16 @@ describe('Challenge Authentication (E2E)', function() {
           res.body.should.be.a('object');
           expect(res.body).to.have.property('success');
           expect(res.body['success']).to.be.true;
-          Key.find({}, function(err, keys) {
-            if (err) return done(err);
-            expect(keys).to.be.length(2);
-            done();
-          });
+
+          keyRepo
+            .find({})
+            .then(keys => {
+              expect(keys).to.be.length(2);
+              done();
+            })
+            .catch(err => {
+              done(err);
+            });
         });
     });
   });
@@ -159,23 +173,25 @@ describe('Challenge Authentication (E2E)', function() {
     });
 
     it('Database should have been updated correctly after challenge request', function(done) {
-      Key.findOne(
-        {
+      const keyRepo = getRepository(Key);
+      keyRepo
+        .findOne({
           publicKey: testUser.publicKey
-        },
-        function(err, key: KeyDocument) {
+        })
+        .then(key => {
           const pastExpdate = new Date();
           pastExpdate.setSeconds(pastExpdate.getSeconds() + 121);
-
-          expect(err).to.be.null;
-          expect(key.challenge).to.be.a('string');
-          expect(key.challengeExpiration).to.be.a('Date');
-          if (key.challengeExpiration) {
-            expect(key.challengeExpiration.getTime()).to.be.lessThan(pastExpdate.getTime());
+          expect(key).to.not.be.null;
+          expect(key!.challenge).to.be.a('string');
+          expect(key!.challengeExpiration).to.be.a('Date');
+          if (key!.challengeExpiration) {
+            expect(key!.challengeExpiration.getTime()).to.be.lessThan(pastExpdate.getTime());
             done();
           }
-        }
-      );
+        })
+        .catch(err => {
+          done(err);
+        });
     });
   });
 
@@ -205,19 +221,22 @@ describe('Challenge Authentication (E2E)', function() {
       });
 
       it('Database should have been updated correctly after unlock', function(done) {
-        Key.findOne(
-          {
+        const keyRepo = getRepository(Key);
+        keyRepo
+          .findOne({
             publicKey: testUser.publicKey
-          },
-          function(err, key: KeyDocument) {
-            expect(err).to.be.null;
-            expect(key.challenge).to.be.undefined;
-            expect(key.challengeExpiration).to.be.undefined;
-            expect(key.unlocks).to.equal(1);
-            expect(key.latestUnlock).to.be.a('Date');
+          })
+          .then(key => {
+            expect(key).to.not.be.null;
+            expect(key!.challenge).to.be.null;
+            expect(key!.challengeExpiration).to.be.null;
+            expect(key!.unlocks).to.equal(1);
+            expect(key!.latestUnlock).to.be.a('Date');
             done();
-          }
-        );
+          })
+          .catch(err => {
+            done(err);
+          });
       });
     });
 
@@ -248,18 +267,21 @@ describe('Challenge Authentication (E2E)', function() {
       });
 
       it('Database should have been updated correctly after incorrect answer', function(done) {
-        Key.findOne(
-          {
+        const keyRepo = getRepository(Key);
+        keyRepo
+          .findOne({
             publicKey: testUser.publicKey
-          },
-          function(err, key: KeyDocument) {
-            expect(err).to.be.null;
-            expect(key.challenge).to.be.undefined;
-            expect(key.challengeExpiration).to.be.undefined;
-            expect(key.unlocks).to.equal(1);
+          })
+          .then(key => {
+            expect(key).to.not.be.null;
+            expect(key!.challenge).to.be.null;
+            expect(key!.challengeExpiration).to.be.null;
+            expect(key!.unlocks).to.equal(1);
             done();
-          }
-        );
+          })
+          .catch(err => {
+            done(err);
+          });
       });
 
       it('Door should not unlock if challenge answered when not requested', function(done) {

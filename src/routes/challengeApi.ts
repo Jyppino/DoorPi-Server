@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import express = require('express');
-import { Key, KeyDocument } from '../config/models';
+import { getRepository } from 'typeorm';
+import { Key } from '../config/entities';
 import { body, matchedData } from 'express-validator';
 import { validate, verifyChallenge } from '../middleware';
 import { ChallengeRequest, KeyNotFoundError, UnauthorizedError, RegisterRequest } from '../models';
@@ -11,16 +12,20 @@ const router = express.Router();
 let registrationKey: string | undefined = undefined;
 const registerKey = function(req: Request, res: Response, next: NextFunction): void {
   const reqParams = matchedData(req) as RegisterRequest;
+  const keyRepo = getRepository(Key);
 
-  const newKey = new Key({
-    publicKey: reqParams.publicKey,
-    name: reqParams.name
-  });
+  const newKey = new Key();
+  newKey.publicKey = reqParams.publicKey;
+  newKey.name = reqParams.name;
 
-  newKey.save(function(err) {
-    if (err) return next(err);
-    res.json({ success: true }); // Confirm registration
-  });
+  keyRepo
+    .save(newKey)
+    .then(() => {
+      res.json({ success: true }); // Confirm registration
+    })
+    .catch(err => {
+      next(err);
+    });
 };
 
 // Route to request challenge for key associated with URL parameter uid
@@ -30,12 +35,12 @@ router.post('/challenge', [body('publicKey').isString(), body('registration').is
   next: NextFunction
 ): void {
   const reqParams = matchedData(req) as ChallengeRequest;
-  Key.findOne(
-    {
-      publicKey: reqParams.publicKey
-    },
-    function(err, key: KeyDocument) {
-      if (err) return next(err);
+
+  const keyRepo = getRepository(Key);
+
+  keyRepo
+    .findOne({ publicKey: reqParams.publicKey })
+    .then(key => {
       if (!key) return next(new KeyNotFoundError(reqParams.publicKey));
 
       const challenge = key.generateChallenge(); // Generate challenge
@@ -44,12 +49,19 @@ router.post('/challenge', [body('publicKey').isString(), body('registration').is
       if (reqParams.registration) {
         registrationKey = key.publicKey;
       }
-      key.save(function(err) {
-        if (err) return next(err);
-        res.json({ challenge: encryptedChallenge }); // Send challenge
-      });
-    }
-  );
+
+      keyRepo
+        .save(key)
+        .then(() => {
+          res.json({ challenge: encryptedChallenge }); // Send challenge
+        })
+        .catch(err => {
+          next(err);
+        });
+    })
+    .catch(err => {
+      next(err);
+    });
 });
 
 const spawn = require('child_process').spawn;
@@ -77,13 +89,19 @@ router.post(
   validate,
   function(req: Request, res: Response, next: NextFunction): void {
     if (!registrationKey) {
-      Key.find({}, function(err, keys: KeyDocument[]) {
-        if (err) return next(err);
-        if (keys.length == 0) {
-          return registerKey(req, res, next); // First key that is registered, bypass security
-        }
-        next(new UnauthorizedError('No registration permitted'));
-      });
+      const keyRepo = getRepository(Key);
+
+      keyRepo
+        .find({})
+        .then(keys => {
+          if (keys.length == 0) {
+            return registerKey(req, res, next); // First key that is registered, bypass security
+          }
+          next(new UnauthorizedError('No registration permitted'));
+        })
+        .catch(err => {
+          next(err);
+        });
     } else {
       req.body.registrationKey = registrationKey;
       registrationKey = undefined;
