@@ -10,6 +10,11 @@ export const databasePath = {
   test: `${homedir()}/Desktop/db-test.sqlite`
 };
 
+export const certificatePath = {
+  key: `${homedir()}/Desktop/doorpi-key.pem`,
+  cert: `${homedir()}/Desktop/doorpi-cert.cert`
+};
+
 export const logPath = `${homedir()}/Desktop/info.log`;
 
 // 678affea-200c-4a9c-b428-487bd6fe6559 (DEV)
