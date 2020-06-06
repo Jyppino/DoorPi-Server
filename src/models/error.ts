@@ -21,14 +21,14 @@ export class UnauthorizedError extends HttpError {
   }
 }
 
-export class IncorrectPasswordError extends UnauthorizedError {
+export class InsufficientRightsError extends UnauthorizedError {
   constructor() {
-    super('Incorrect master password');
+    super('Insufficient rights to perform operation');
   }
 }
 
 export class KeyNotFoundError extends HttpError {
-  constructor(uid: string) {
-    super(404, `Key not found for public key: ${uid}`);
+  constructor(id: string) {
+    super(404, `Key not found for id: ${id}`);
   }
 }

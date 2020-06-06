@@ -3,17 +3,25 @@ import { getRepository } from 'typeorm';
 import { Key } from '../config/entities';
 import { VerifyChallengeRequest, KeyNotFoundError } from '../models';
 
+// Declare key object as part of express Request interface
+declare module 'express-serve-static-core' {
+  interface Request {
+    key?: Key;
+  }
+}
+
 // Middleware that checks answer to challenge
 export const verifyChallenge = function(req: Request, res: Response, next: NextFunction): void {
   const reqParams = req.body as VerifyChallengeRequest;
   const keyRepo = getRepository(Key);
-  const isRegistering = reqParams.registrationKey !== undefined;
-  const pubKey = reqParams.registrationKey ? reqParams.registrationKey : reqParams.publicKey;
+  const isRegistering = reqParams.registerId !== undefined;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const id = isRegistering ? reqParams.registerId! : reqParams.id;
 
   keyRepo
-    .findOne({ publicKey: pubKey })
+    .findOne({ id: id })
     .then(key => {
-      if (!key) return next(new KeyNotFoundError(pubKey));
+      if (!key) return next(new KeyNotFoundError(id));
 
       const verifyError = key.verifyChallenge(reqParams.answer, isRegistering); // Verify answer to challenge
 
@@ -21,6 +29,7 @@ export const verifyChallenge = function(req: Request, res: Response, next: NextF
         .save(key)
         .then(() => {
           if (verifyError) return next(verifyError); // Pass verification error to errorHandler
+          req.key = key; // Attach key to request object
           next(); // Challenge answered correctly
         })
         .catch(err => {

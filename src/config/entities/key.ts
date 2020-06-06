@@ -17,6 +17,9 @@ export class Key {
   @Column('datetime', { default: Date.now() })
   created: Date;
 
+  @Column({ default: false })
+  admin: boolean;
+
   @Column('int', { default: 0 })
   unlocks: number;
 

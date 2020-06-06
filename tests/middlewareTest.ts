@@ -13,14 +13,27 @@ const expdate = new Date();
 expdate.setSeconds(expdate.getSeconds() + 30);
 const testKeys = [
   {
+    id: 'CHALLENGE_EXPIRED',
     name: 'CHALLENGE_EXPIRED',
     publicKey: 'CHALLENGE_EXPIRED',
     challenge: tempChallenge,
     challengeExpiration: new Date()
   },
-  { name: 'NO_CHALLENGE', publicKey: 'NO_CHALLENGE' },
-  { name: 'INCORRECT_ANSWER', publicKey: 'INCORRECT_ANSWER', challenge: tempChallenge, challengeExpiration: expdate },
-  { name: 'CORRECT_ANSWER', publicKey: 'CORRECT_ANSWER', challenge: tempChallenge, challengeExpiration: expdate }
+  { id: 'NO_CHALLENGE', name: 'NO_CHALLENGE', publicKey: 'NO_CHALLENGE' },
+  {
+    id: 'INCORRECT_ANSWER',
+    name: 'INCORRECT_ANSWER',
+    publicKey: 'INCORRECT_ANSWER',
+    challenge: tempChallenge,
+    challengeExpiration: expdate
+  },
+  {
+    id: 'CORRECT_ANSWER',
+    name: 'CORRECT_ANSWER',
+    publicKey: 'CORRECT_ANSWER',
+    challenge: tempChallenge,
+    challengeExpiration: expdate
+  }
 ];
 
 describe('Middleware (UNIT)', function() {
@@ -42,11 +55,11 @@ describe('Middleware (UNIT)', function() {
 
     it('challengeVerify should provide an error if unknown key', function(done) {
       function callback(error: Error): void {
-        expect(error.message).to.be.equal('Key not found for public key: UNKNOWN KEY');
+        expect(error.message).to.be.equal('Key not found for id: UNKNOWN ID');
         done();
       }
       verifyChallenge(
-        { body: { publicKey: 'UNKNOWN KEY', answer: tempChallenge } } as Request,
+        { body: { id: 'UNKNOWN ID', answer: tempChallenge } } as Request,
         {} as Response,
         callback as NextFunction
       );
@@ -58,7 +71,7 @@ describe('Middleware (UNIT)', function() {
         done();
       }
       verifyChallenge(
-        { body: { publicKey: 'NO_CHALLENGE', answer: tempChallenge } } as Request,
+        { body: { id: 'NO_CHALLENGE', answer: tempChallenge } } as Request,
         {} as Response,
         callback as NextFunction
       );
@@ -70,7 +83,7 @@ describe('Middleware (UNIT)', function() {
         done();
       }
       verifyChallenge(
-        { body: { publicKey: 'CHALLENGE_EXPIRED', answer: tempChallenge } } as Request,
+        { body: { id: 'CHALLENGE_EXPIRED', answer: tempChallenge } } as Request,
         {} as Response,
         callback as NextFunction
       );
@@ -82,7 +95,7 @@ describe('Middleware (UNIT)', function() {
         done();
       }
       verifyChallenge(
-        { body: { publicKey: 'INCORRECT_ANSWER', answer: 'INCORRECT_ANSWER' } } as Request,
+        { body: { id: 'INCORRECT_ANSWER', answer: 'INCORRECT_ANSWER' } } as Request,
         {} as Response,
         callback as NextFunction
       );
@@ -94,7 +107,7 @@ describe('Middleware (UNIT)', function() {
         done();
       }
       verifyChallenge(
-        { body: { publicKey: 'CORRECT_ANSWER', answer: tempChallenge } } as Request,
+        { body: { id: 'CORRECT_ANSWER', answer: tempChallenge } } as Request,
         {} as Response,
         callback as NextFunction
       );

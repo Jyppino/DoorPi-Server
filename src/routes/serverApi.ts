@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as express from 'express';
 import { getRepository } from 'typeorm';
 import { Key } from '../config/entities';
-import { ChallengeRequest } from '../models';
+import { IsRegisteredRequest, IsRegisteredResponse } from '../models';
 import { serverSettings } from '../config/config';
 import { body, matchedData } from 'express-validator';
 import { validate } from '../middleware';
@@ -31,15 +31,21 @@ router.post('/isRegistered', [body('publicKey').isString()], validate, function(
   res: Response,
   next: NextFunction
 ): void {
-  const reqParams = matchedData(req) as ChallengeRequest;
+  const reqParams = matchedData(req) as IsRegisteredRequest;
   const keyRepo = getRepository(Key);
 
   keyRepo
     .findOne({ publicKey: reqParams.publicKey })
     .then(key => {
-      let registered = false;
-      if (key) registered = true;
-      res.json({ registered });
+      const status: IsRegisteredResponse = {
+        registered: false,
+        id: undefined
+      };
+      if (key) {
+        status.registered = true;
+        status.id = key.id;
+      }
+      res.json(status);
     })
     .catch(err => {
       next(err);

@@ -9,6 +9,7 @@ import forge from 'node-forge';
 
 const expect = chai.expect;
 const testUser = {
+  id: '',
   name: 'TEST_USER',
   publicKey: '',
   privateKey: '',
@@ -23,6 +24,7 @@ const testUser2 = {
 };
 
 const incorrectUser = {
+  id: 'INCORRECT_ID',
   name: 'INCORRECT_USER',
   publicKey: 'INCORRECT_PUBLICKEY',
   privateKey: 'INCORRECT_PRIVATEKEY'
@@ -74,6 +76,7 @@ describe('Challenge Authentication (E2E)', function() {
             .find({})
             .then(keys => {
               expect(keys).to.be.length(1);
+              testUser.id = keys[0].id;
               done();
             })
             .catch(err => {
@@ -99,7 +102,7 @@ describe('Challenge Authentication (E2E)', function() {
       chai
         .request(app)
         .post('/challenge')
-        .send({ publicKey: testUser.publicKey, registration: true })
+        .send({ id: testUser.id, register: true })
         .end(function(err, res) {
           expect(err).to.be.null;
           res.should.have.status(200);
@@ -148,7 +151,7 @@ describe('Challenge Authentication (E2E)', function() {
       chai
         .request(app)
         .post('/challenge')
-        .send({ publicKey: testUser.publicKey, registration: false })
+        .send({ id: testUser.id, register: false })
         .end(function(err, res) {
           expect(err).to.be.null;
           res.should.have.status(200);
@@ -163,11 +166,11 @@ describe('Challenge Authentication (E2E)', function() {
       chai
         .request(app)
         .post('/challenge')
-        .send({ publicKey: incorrectUser.publicKey, registration: false })
+        .send({ id: incorrectUser.id, register: false })
         .end(function(err, res) {
           expect(err).to.be.null;
           res.should.have.status(404);
-          expect(res.body.message).to.equal(`Key not found for public key: ${incorrectUser.publicKey}`);
+          expect(res.body.message).to.equal(`Key not found for id: ${incorrectUser.id}`);
           done();
         });
     });
@@ -176,7 +179,7 @@ describe('Challenge Authentication (E2E)', function() {
       const keyRepo = getRepository(Key);
       keyRepo
         .findOne({
-          publicKey: testUser.publicKey
+          id: testUser.id
         })
         .then(key => {
           const pastExpdate = new Date();
@@ -209,7 +212,7 @@ describe('Challenge Authentication (E2E)', function() {
         chai
           .request(app)
           .post('/unlock')
-          .send({ publicKey: testUser.publicKey, answer: answer })
+          .send({ id: testUser.id, answer: answer })
           .end(function(err, res) {
             expect(err).to.be.null;
             res.should.have.status(200);
@@ -224,7 +227,7 @@ describe('Challenge Authentication (E2E)', function() {
         const keyRepo = getRepository(Key);
         keyRepo
           .findOne({
-            publicKey: testUser.publicKey
+            id: testUser.id
           })
           .then(key => {
             expect(key).to.not.be.null;
@@ -247,7 +250,7 @@ describe('Challenge Authentication (E2E)', function() {
         chai
           .request(app)
           .post('/challenge')
-          .send({ publicKey: testUser.publicKey, registration: false })
+          .send({ id: testUser.id, register: false })
           .end(function(err) {
             if (!err) done();
           });
@@ -257,7 +260,7 @@ describe('Challenge Authentication (E2E)', function() {
         chai
           .request(app)
           .post('/unlock')
-          .send({ publicKey: testUser.publicKey, answer: incorrectAnswer })
+          .send({ id: testUser.id, answer: incorrectAnswer })
           .end(function(err, res) {
             expect(err).to.be.null;
             res.should.have.status(401);
@@ -270,7 +273,7 @@ describe('Challenge Authentication (E2E)', function() {
         const keyRepo = getRepository(Key);
         keyRepo
           .findOne({
-            publicKey: testUser.publicKey
+            id: testUser.id
           })
           .then(key => {
             expect(key).to.not.be.null;
@@ -288,7 +291,7 @@ describe('Challenge Authentication (E2E)', function() {
         chai
           .request(app)
           .post('/unlock')
-          .send({ publicKey: testUser.publicKey, answer: incorrectAnswer })
+          .send({ id: testUser.id, answer: incorrectAnswer })
           .end(function(err, res) {
             expect(err).to.be.null;
             res.should.have.status(401);
@@ -301,11 +304,11 @@ describe('Challenge Authentication (E2E)', function() {
         chai
           .request(app)
           .post('/unlock')
-          .send({ publicKey: incorrectUser.publicKey, answer: incorrectAnswer })
+          .send({ id: incorrectUser.id, answer: incorrectAnswer })
           .end(function(err, res) {
             expect(err).to.be.null;
             res.should.have.status(404);
-            expect(res.body.message).to.equal(`Key not found for public key: ${incorrectUser.publicKey}`);
+            expect(res.body.message).to.equal(`Key not found for id: ${incorrectUser.id}`);
             done();
           });
       });
