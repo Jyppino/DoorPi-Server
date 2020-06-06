@@ -24,6 +24,14 @@ const testUser2 = {
   challenge: ''
 };
 
+const testUser3 = {
+  id: '',
+  name: 'TEST_USER3',
+  publicKey: '',
+  privateKey: '',
+  challenge: ''
+};
+
 const incorrectUser = {
   id: 'INCORRECT_ID',
   name: 'INCORRECT_USER',
@@ -327,6 +335,161 @@ describe('Challenge Authentication (E2E)', function() {
             res.should.have.status(404);
             expect(res.body.message).to.equal(`Key not found for id: ${incorrectUser.id}`);
             done();
+          });
+      });
+    });
+  });
+
+  describe('User management', function() {
+    describe('Regular Key', function() {
+      before(function(done) {
+        // Create a temp key before running tests
+        forge.pki.rsa.generateKeyPair({ bits: 2048, workers: 2 }, function(err, keypair) {
+          if (err) return done(err);
+          testUser3.publicKey = forge.pki.publicKeyToPem(keypair.publicKey); // Store public key for tests
+          testUser3.privateKey = forge.pki.privateKeyToPem(keypair.privateKey); // Store private key for tests
+
+          const newKey = new Key();
+          newKey.id = testUser3.id;
+          newKey.name = testUser3.name;
+          newKey.publicKey = testUser3.publicKey;
+
+          getRepository(Key)
+            .save(newKey)
+            .then(() => {
+              done();
+            })
+            .catch(err => {
+              done(err);
+            });
+        });
+      });
+
+      beforeEach(function(done) {
+        chai
+          .request(app)
+          .post('/challenge')
+          .send({ id: testUser3.id, register: false })
+          .end(function(err, res) {
+            if (err) return done(err);
+            const privateKey = forge.pki.privateKeyFromPem(testUser3.privateKey) as forge.pki.rsa.PrivateKey;
+            testUser3.challenge = privateKey.decrypt(forge.util.decode64(res.body.challenge), 'RSA-OAEP', {
+              md: forge.md.sha256.create(),
+              mgf1: {
+                md: forge.md.sha1.create()
+              }
+            });
+            done();
+          });
+      });
+
+      it('Should not be able to request list of registered keys', function(done) {
+        chai
+          .request(app)
+          .post('/keys')
+          .send({ id: testUser3.id, answer: testUser3.challenge })
+          .end(function(err, res) {
+            expect(err).to.be.null;
+            res.should.have.status(401);
+            expect(res.body.message).to.equal(`Insufficient rights to perform operation`);
+            done();
+          });
+      });
+
+      it('Should not be able to delete other keys', function(done) {
+        chai
+          .request(app)
+          .post('/delete')
+          .send({ id: testUser3.id, deleteId: testUser.id, answer: testUser3.challenge })
+          .end(function(err, res) {
+            expect(err).to.be.null;
+            res.should.have.status(401);
+            expect(res.body.message).to.equal(`Insufficient rights to perform operation`);
+            done();
+          });
+      });
+
+      it('Should be able to delete itself', function(done) {
+        chai
+          .request(app)
+          .post('/delete')
+          .send({ id: testUser3.id, deleteId: testUser3.id, answer: testUser3.challenge })
+          .end(function(err, res) {
+            expect(err).to.be.null;
+            res.should.have.status(200);
+
+            getRepository(Key)
+              .findOne({
+                id: testUser3.id
+              })
+              .then(key => {
+                expect(key).to.be.undefined;
+                done();
+              })
+              .catch(err => {
+                done(err);
+              });
+          });
+      });
+    });
+
+    describe('Admin Key', function() {
+      beforeEach(function(done) {
+        chai
+          .request(app)
+          .post('/challenge')
+          .send({ id: testUser.id, register: false })
+          .end(function(err, res) {
+            if (err) return done(err);
+            const privateKey = forge.pki.privateKeyFromPem(testUser.privateKey) as forge.pki.rsa.PrivateKey;
+            testUser.challenge = privateKey.decrypt(forge.util.decode64(res.body.challenge), 'RSA-OAEP', {
+              md: forge.md.sha256.create(),
+              mgf1: {
+                md: forge.md.sha1.create()
+              }
+            });
+            done();
+          });
+      });
+
+      it('Should be able to request list of registered keys', function(done) {
+        chai
+          .request(app)
+          .post('/keys')
+          .send({ id: testUser.id, answer: testUser.challenge })
+          .end(function(err, res) {
+            expect(err).to.be.null;
+            res.should.have.status(200);
+            expect(res.body).to.be.length(2);
+            expect(res.body[0]).to.have.property('id');
+            expect(res.body[0]).to.have.property('name');
+            expect(res.body[0]).to.have.property('unlocks');
+            expect(res.body[0]).to.have.property('latestUnlock');
+            expect(res.body[0]).to.have.property('admin');
+            done();
+          });
+      });
+
+      it('Should be able to delete other keys', function(done) {
+        chai
+          .request(app)
+          .post('/delete')
+          .send({ id: testUser.id, deleteId: testUser2.id, answer: testUser.challenge })
+          .end(function(err, res) {
+            expect(err).to.be.null;
+            res.should.have.status(200);
+
+            getRepository(Key)
+              .findOne({
+                id: testUser2.id
+              })
+              .then(key => {
+                expect(key).to.be.undefined;
+                done();
+              })
+              .catch(err => {
+                done(err);
+              });
           });
       });
     });

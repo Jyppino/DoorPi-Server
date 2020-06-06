@@ -126,4 +126,45 @@ router.post(
   registerKey
 );
 
+// Route to get list of registered keys
+router.post('/keys', [body('id').isString(), body('answer').isString()], validate, verifyChallenge, function(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
+  if (!req.key?.admin) return next(new InsufficientRightsError());
+  const keyRepo = getRepository(Key);
+  keyRepo
+    .find({ select: ['name', 'id', 'latestUnlock', 'unlocks', 'admin'] })
+    .then(keys => {
+      res.json(keys);
+    })
+    .catch(err => {
+      next(err);
+    });
+});
+
+// Route to delete key
+router.post(
+  '/delete',
+  [body('id').isString(), body('deleteId').isString(), body('answer').isString()],
+  validate,
+  verifyChallenge,
+  function(req: Request, res: Response, next: NextFunction): void {
+    const reqParams = matchedData(req) as DeleteRequest;
+    const keyRepo = getRepository(Key);
+
+    if (reqParams.id !== reqParams.deleteId && !req.key?.admin) return next(new InsufficientRightsError()); // Admin check
+
+    keyRepo
+      .delete({ id: reqParams.deleteId })
+      .then(() => {
+        res.status(200).end();
+      })
+      .catch(err => {
+        return next(err);
+      });
+  }
+);
+
 export const challengeAuthRoute = router;
