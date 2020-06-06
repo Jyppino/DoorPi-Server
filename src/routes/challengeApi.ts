@@ -18,12 +18,13 @@ const router = express.Router();
 // Keeps track of which key is currently registering a new key
 let registerId: string | undefined = undefined;
 const registerKey = function(req: Request, res: Response, next: NextFunction): void {
-  const reqParams = matchedData(req) as RegisterRequest;
+  const reqParams = req.body as RegisterRequest;
   const keyRepo = getRepository(Key);
 
   const newKey = new Key();
   newKey.publicKey = reqParams.publicKey;
   newKey.name = reqParams.name;
+  newKey.admin = reqParams.admin ? reqParams.admin : false;
 
   keyRepo
     .save(newKey)
@@ -53,6 +54,7 @@ router.post('/challenge', [body('id').isString(), body('register').isBoolean()],
       const encryptedChallenge = key.encryptWithPublicKey(challenge); // Encrypt challenge
 
       if (reqParams.register) {
+        if (!key.admin) return next(new InsufficientRightsError()); // Admin check
         registerId = key.id; // Store id of key that wants to register new key
       }
 
@@ -92,7 +94,10 @@ router.post(
     body('name').notEmpty(),
     body('answer')
       .optional()
-      .isString()
+      .isString(),
+    body('admin')
+      .isBoolean()
+      .optional()
   ],
   validate,
   function(req: Request, res: Response, next: NextFunction): void {
@@ -103,6 +108,7 @@ router.post(
         .find({})
         .then(keys => {
           if (keys.length == 0) {
+            req.body.admin = true;
             return registerKey(req, res, next); // First key that is registered, bypass security
           }
           next(new UnauthorizedError('No registration permitted'));

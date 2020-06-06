@@ -17,6 +17,7 @@ const testUser = {
 };
 
 const testUser2 = {
+  id: '',
   name: 'TEST_USER2',
   publicKey: '',
   privateKey: '',
@@ -76,6 +77,7 @@ describe('Challenge Authentication (E2E)', function() {
             .find({})
             .then(keys => {
               expect(keys).to.be.length(1);
+              expect(keys[0].admin).to.be.true;
               testUser.id = keys[0].id;
               done();
             })
@@ -89,7 +91,7 @@ describe('Challenge Authentication (E2E)', function() {
       chai
         .request(app)
         .post('/register')
-        .send({ publicKey: incorrectUser.publicKey, name: incorrectUser.name })
+        .send({ publicKey: incorrectUser.publicKey, name: incorrectUser.name, admin: false })
         .end(function(err, res) {
           expect(err).to.be.null;
           res.should.have.status(401);
@@ -98,7 +100,7 @@ describe('Challenge Authentication (E2E)', function() {
         });
     });
 
-    it('Should be able to request registration', function(done) {
+    it('Should be able to request registration with admin rights', function(done) {
       chai
         .request(app)
         .post('/challenge')
@@ -125,7 +127,7 @@ describe('Challenge Authentication (E2E)', function() {
       chai
         .request(app)
         .post('/register')
-        .send({ publicKey: testUser2.publicKey, name: testUser2.name, answer })
+        .send({ publicKey: testUser2.publicKey, name: testUser2.name, answer, admin: false })
         .end(function(err, res) {
           expect(err).to.be.null;
           res.should.have.status(200);
@@ -137,11 +139,26 @@ describe('Challenge Authentication (E2E)', function() {
             .find({})
             .then(keys => {
               expect(keys).to.be.length(2);
+              expect(keys[1].admin).to.be.false;
+              testUser2.id = keys[1].id;
               done();
             })
             .catch(err => {
               done(err);
             });
+        });
+    });
+
+    it('Should not be able to request registration without admin rights', function(done) {
+      chai
+        .request(app)
+        .post('/challenge')
+        .send({ id: testUser2.id, register: true })
+        .end(function(err, res) {
+          expect(err).to.be.null;
+          res.should.have.status(401);
+          expect(res.body.message).to.equal('Insufficient rights to perform operation');
+          done();
         });
     });
   });
