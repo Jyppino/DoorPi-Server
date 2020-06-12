@@ -39,7 +39,7 @@ if (isProduction) {
     cert: fs.readFileSync(certificatePath.cert)
   };
   const server = https.createServer(options, app);
-  server.listen(443, () => console.log(`Server running production on port: ${443}`)); // Start HTTPS server
+  server.listen(port, () => console.log(`Server running production on port: ${port}`)); // Start HTTPS server
 } else {
   const server = http.createServer(app);
   server.listen(port, () => console.log(`Server running development on port: ${port}`)); // Start HTTP server

@@ -10,9 +10,10 @@ export const databasePath = {
   test: `${homedir()}/Desktop/db-test.sqlite`
 };
 
+// Generate certificates: openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout doorpi.key -out doorpi.pem -sha256
 export const certificatePath = {
-  key: `${homedir()}/Desktop/doorpi-key.pem`,
-  cert: `${homedir()}/Desktop/doorpi-cert.cert`
+  key: `${homedir()}/Desktop/doorpi.key`,
+  cert: `${homedir()}/Desktop/doorpi.pem`
 };
 
 export const logPath = `${homedir()}/Desktop/info.log`;
