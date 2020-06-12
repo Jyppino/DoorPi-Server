@@ -99,7 +99,7 @@ describe('Challenge Authentication (E2E)', function() {
       chai
         .request(app)
         .post('/register')
-        .send({ publicKey: incorrectUser.publicKey, name: incorrectUser.name, admin: false })
+        .send({ publicKey: incorrectUser.publicKey, name: incorrectUser.name })
         .end(function(err, res) {
           expect(err).to.be.null;
           res.should.have.status(401);
@@ -135,7 +135,7 @@ describe('Challenge Authentication (E2E)', function() {
       chai
         .request(app)
         .post('/register')
-        .send({ publicKey: testUser2.publicKey, name: testUser2.name, answer, admin: false })
+        .send({ publicKey: testUser2.publicKey, name: testUser2.name, answer })
         .end(function(err, res) {
           expect(err).to.be.null;
           res.should.have.status(200);
@@ -460,12 +460,13 @@ describe('Challenge Authentication (E2E)', function() {
           .end(function(err, res) {
             expect(err).to.be.null;
             res.should.have.status(200);
-            expect(res.body).to.be.length(2);
-            expect(res.body[0]).to.have.property('id');
-            expect(res.body[0]).to.have.property('name');
-            expect(res.body[0]).to.have.property('unlocks');
-            expect(res.body[0]).to.have.property('latestUnlock');
-            expect(res.body[0]).to.have.property('admin');
+            const keys = res.body.keys;
+            expect(keys).to.be.length(2);
+            expect(keys[0]).to.have.property('id');
+            expect(keys[0]).to.have.property('name');
+            expect(keys[0]).to.have.property('unlocks');
+            expect(keys[0]).to.have.property('latestUnlock');
+            expect(keys[0]).to.have.property('admin');
             done();
           });
       });

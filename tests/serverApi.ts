@@ -9,6 +9,7 @@ import { Key } from '../src/config/entities';
 const expect = chai.expect;
 let publicKey = '';
 let id = '';
+let admin = false;
 
 describe('Server API (UNIT)', function() {
   before(function(done) {
@@ -20,6 +21,7 @@ describe('Server API (UNIT)', function() {
         expect(keys.length).to.be.at.least(1);
         publicKey = keys[0].publicKey;
         id = keys[0].id;
+        admin = keys[0].admin;
         done();
       })
       .catch(err => {
@@ -58,6 +60,7 @@ describe('Server API (UNIT)', function() {
         expect(res.body['registered']).to.be.true;
         expect(res.body).to.have.property('id');
         expect(res.body['id']).to.equal(id);
+        expect(res.body['admin']).to.equal(admin);
         done();
       });
   });
@@ -73,6 +76,7 @@ describe('Server API (UNIT)', function() {
         res.body.should.be.a('object');
         expect(res.body).to.have.property('registered');
         expect(res.body['registered']).to.be.false;
+        expect(res.body['admin']).to.be.false;
         expect(res.body).to.not.have.property('id');
         done();
       });
