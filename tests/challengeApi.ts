@@ -396,11 +396,11 @@ describe('Challenge Authentication (E2E)', function() {
           });
       });
 
-      it('Should not be able to delete other keys', function(done) {
+      it('Should not be able to delete keys', function(done) {
         chai
           .request(app)
           .post('/delete')
-          .send({ id: testUser3.id, deleteId: testUser.id, answer: testUser3.challenge })
+          .send({ id: testUser3.id, deleteId: testUser3.id, answer: testUser3.challenge })
           .end(function(err, res) {
             expect(err).to.be.null;
             res.should.have.status(401);
@@ -409,28 +409,41 @@ describe('Challenge Authentication (E2E)', function() {
           });
       });
 
-      it('Should be able to delete itself', function(done) {
+      it('Should not be able to change admin rights of keys', function(done) {
         chai
           .request(app)
-          .post('/delete')
-          .send({ id: testUser3.id, deleteId: testUser3.id, answer: testUser3.challenge })
+          .post('/setAdmin')
+          .send({ id: testUser3.id, adminId: testUser3.id, answer: testUser3.challenge, status: true })
           .end(function(err, res) {
             expect(err).to.be.null;
-            res.should.have.status(200);
-
-            getRepository(Key)
-              .findOne({
-                id: testUser3.id
-              })
-              .then(key => {
-                expect(key).to.be.undefined;
-                done();
-              })
-              .catch(err => {
-                done(err);
-              });
+            res.should.have.status(401);
+            expect(res.body.message).to.equal(`Insufficient rights to perform operation`);
+            done();
           });
       });
+
+      // it('Should be able to delete itself', function(done) {
+      //   chai
+      //     .request(app)
+      //     .post('/delete')
+      //     .send({ id: testUser3.id, deleteId: testUser3.id, answer: testUser3.challenge })
+      //     .end(function(err, res) {
+      //       expect(err).to.be.null;
+      //       res.should.have.status(200);
+
+      //       getRepository(Key)
+      //         .findOne({
+      //           id: testUser3.id
+      //         })
+      //         .then(key => {
+      //           expect(key).to.be.undefined;
+      //           done();
+      //         })
+      //         .catch(err => {
+      //           done(err);
+      //         });
+      //     });
+      // });
     });
 
     describe('Admin Key', function() {
@@ -461,13 +474,59 @@ describe('Challenge Authentication (E2E)', function() {
             expect(err).to.be.null;
             res.should.have.status(200);
             const keys = res.body.keys;
-            expect(keys).to.be.length(2);
+            expect(keys).to.be.length(3);
             expect(keys[0]).to.have.property('id');
             expect(keys[0]).to.have.property('name');
             expect(keys[0]).to.have.property('unlocks');
             expect(keys[0]).to.have.property('latestUnlock');
             expect(keys[0]).to.have.property('admin');
             done();
+          });
+      });
+
+      it('Should be able to add admin rights to keys', function(done) {
+        chai
+          .request(app)
+          .post('/setAdmin')
+          .send({ id: testUser.id, adminId: testUser2.id, answer: testUser.challenge, status: true })
+          .end(function(err, res) {
+            expect(err).to.be.null;
+            res.should.have.status(200);
+
+            getRepository(Key)
+              .findOne({
+                id: testUser2.id
+              })
+              .then(key => {
+                expect(key?.admin).to.be.true;
+                done();
+              })
+              .catch(err => {
+                done(err);
+              });
+          });
+      });
+
+      it('Should be able to remove admin rights from keys', function(done) {
+        chai
+          .request(app)
+          .post('/setAdmin')
+          .send({ id: testUser.id, adminId: testUser2.id, answer: testUser.challenge, status: false })
+          .end(function(err, res) {
+            expect(err).to.be.null;
+            res.should.have.status(200);
+
+            getRepository(Key)
+              .findOne({
+                id: testUser2.id
+              })
+              .then(key => {
+                expect(key?.admin).to.be.false;
+                done();
+              })
+              .catch(err => {
+                done(err);
+              });
           });
       });
 
