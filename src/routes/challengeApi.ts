@@ -32,9 +32,11 @@ const registerKey = function(req: Request, res: Response, next: NextFunction): v
     .then(() => {
       res.json({ success: true }); // Confirm registration
     })
-    .catch(err => {
-      next(err);
-    });
+    .catch(
+      /* istanbul ignore next */ err => {
+        next(err);
+      }
+    );
 };
 
 // Route to request challenge for key associated with URL parameter uid
@@ -64,13 +66,17 @@ router.post('/challenge', [body('id').isString(), body('register').isBoolean()],
         .then(() => {
           res.json({ challenge: encryptedChallenge }); // Send challenge
         })
-        .catch(err => {
-          next(err);
-        });
+        .catch(
+          /* istanbul ignore next */ err => {
+            next(err);
+          }
+        );
     })
-    .catch(err => {
-      next(err);
-    });
+    .catch(
+      /* istanbul ignore next */ err => {
+        next(err);
+      }
+    );
 });
 
 const spawn = require('child_process').spawn;
@@ -94,9 +100,11 @@ router.post('/unlock', [body('id').isString(), body('answer').isString()], valid
       }
       res.json({ success: true });
     })
-    .catch(err => {
-      next(err);
-    });
+    .catch(
+      /* istanbul ignore next */ err => {
+        next(err);
+      }
+    );
 });
 
 // Route to register first or new key
@@ -123,9 +131,11 @@ router.post(
           }
           next(new UnauthorizedError('No registration permitted'));
         })
-        .catch(err => {
-          next(err);
-        });
+        .catch(
+          /* istanbul ignore next */ err => {
+            next(err);
+          }
+        );
     } else {
       req.body.registerId = registerId;
       registerId = undefined;
@@ -149,9 +159,11 @@ router.post('/keys', [body('id').isString(), body('answer').isString()], validat
     .then(keys => {
       res.json({ keys: keys });
     })
-    .catch(err => {
-      next(err);
-    });
+    .catch(
+      /* istanbul ignore next */ err => {
+        next(err);
+      }
+    );
 });
 
 // Route to delete key
@@ -164,16 +176,18 @@ router.post(
     const reqParams = matchedData(req) as DeleteRequest;
     const keyRepo = getRepository(Key);
 
-    if (reqParams.id !== reqParams.deleteId && !req.key?.admin) return next(new InsufficientRightsError()); // Admin check
+    if (!req.key?.admin) return next(new InsufficientRightsError()); // Admin check
 
     keyRepo
       .delete({ id: reqParams.deleteId })
       .then(() => {
         res.json({ success: true });
       })
-      .catch(err => {
-        return next(err);
-      });
+      .catch(
+        /* istanbul ignore next */ err => {
+          return next(err);
+        }
+      );
   }
 );
 
@@ -200,13 +214,15 @@ router.post(
           .then(() => {
             res.json({ success: true });
           })
-          .catch(err => {
+          .catch(err => /* istanbul ignore next */ {
             next(err);
           });
       })
-      .catch(err => {
-        next(err);
-      });
+      .catch(
+        /* istanbul ignore next */ err => {
+          next(err);
+        }
+      );
   }
 );
 

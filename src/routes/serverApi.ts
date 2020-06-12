@@ -21,9 +21,11 @@ router.get('/getSettings', function(req: Request, res: Response, next: NextFunct
       }
       res.json({ ...serverSettings, setup });
     })
-    .catch(err => {
-      next(err);
-    });
+    .catch(
+      /* istanbul ignore next */ err => {
+        next(err);
+      }
+    );
 });
 
 router.post('/isRegistered', [body('publicKey').isString()], validate, function(
@@ -49,9 +51,11 @@ router.post('/isRegistered', [body('publicKey').isString()], validate, function(
       }
       res.json(status);
     })
-    .catch(err => {
-      next(err);
-    });
+    .catch(
+      /* istanbul ignore next */ err => {
+        next(err);
+      }
+    );
 });
 
 export const serverApi = router;

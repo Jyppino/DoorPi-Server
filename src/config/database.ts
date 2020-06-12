@@ -14,12 +14,16 @@ createConnection({
       .then(() => {
         console.log('Connected to SQLite database');
       })
-      .catch(err => {
-        console.log('SQLite database connection error: ' + err);
-        process.exit(1);
-      });
+      .catch(
+        /* istanbul ignore next */ err => {
+          console.log('SQLite database connection error: ' + err);
+          process.exit(1);
+        }
+      );
   })
-  .catch(err => {
-    console.log('SQLite database connection error: ' + err);
-    process.exit(1);
-  });
+  .catch(
+    /* istanbul ignore next */ err => {
+      console.log('SQLite database connection error: ' + err);
+      process.exit(1);
+    }
+  );

@@ -31,11 +31,15 @@ export const verifyChallenge = function(req: Request, res: Response, next: NextF
           req.key = key; // Attach key to request object
           next(); // Challenge answered correctly
         })
-        .catch(err => {
-          next(err);
-        });
+        .catch(
+          /* istanbul ignore next */ err => {
+            next(err);
+          }
+        );
     })
-    .catch(err => {
-      next(err);
-    });
+    .catch(
+      /* istanbul ignore next */ err => {
+        next(err);
+      }
+    );
 };
