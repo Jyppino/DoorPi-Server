@@ -16,11 +16,17 @@ export interface IsRegisteredRequest {
 export interface RegisterRequest {
   publicKey: string;
   name: string;
-  admin: boolean;
 }
 
 export interface DeleteRequest {
   id: string;
   deleteId: string;
-  anser: string;
+  answer: string;
+}
+
+export interface AdminRequest {
+  id: string;
+  adminId: string;
+  answer: string;
+  status: boolean;
 }

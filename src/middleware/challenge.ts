@@ -7,6 +7,7 @@ import { VerifyChallengeRequest, KeyNotFoundError } from '../models';
 declare module 'express-serve-static-core' {
   interface Request {
     key?: Key;
+    admin?: boolean;
   }
 }
 
@@ -14,16 +15,14 @@ declare module 'express-serve-static-core' {
 export const verifyChallenge = function(req: Request, res: Response, next: NextFunction): void {
   const reqParams = req.body as VerifyChallengeRequest;
   const keyRepo = getRepository(Key);
-  const isRegistering = reqParams.registerId !== undefined;
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const id = isRegistering ? reqParams.registerId! : reqParams.id;
+  const id = reqParams.registerId !== undefined ? reqParams.registerId : reqParams.id;
 
   keyRepo
     .findOne({ id: id })
     .then(key => {
       if (!key) return next(new KeyNotFoundError(id));
 
-      const verifyError = key.verifyChallenge(reqParams.answer, isRegistering); // Verify answer to challenge
+      const verifyError = key.verifyChallenge(reqParams.answer); // Verify answer to challenge
 
       keyRepo
         .save(key)

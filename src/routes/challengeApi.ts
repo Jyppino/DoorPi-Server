@@ -10,6 +10,7 @@ import {
   UnauthorizedError,
   RegisterRequest,
   DeleteRequest,
+  AdminRequest,
   InsufficientRightsError
 } from '../models';
 
@@ -18,13 +19,13 @@ const router = express.Router();
 // Keeps track of which key is currently registering a new key
 let registerId: string | undefined = undefined;
 const registerKey = function(req: Request, res: Response, next: NextFunction): void {
-  const reqParams = req.body as RegisterRequest;
+  const reqParams = matchedData(req) as RegisterRequest;
   const keyRepo = getRepository(Key);
 
   const newKey = new Key();
   newKey.publicKey = reqParams.publicKey;
   newKey.name = reqParams.name;
-  newKey.admin = reqParams.admin ? reqParams.admin : false;
+  newKey.admin = req.admin ? req.admin : false;
 
   keyRepo
     .save(newKey)
@@ -78,12 +79,24 @@ const isProduction = process.env.NODE_ENV == 'PRODUCTION';
 // Route to unlock with key
 router.post('/unlock', [body('id').isString(), body('answer').isString()], validate, verifyChallenge, function(
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): void {
-  if (isProduction) {
-    spawn('python', ['./unlock_door.py']);
-  }
-  res.json({ success: true });
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const key = req.key!;
+  key.unlocks += 1;
+  key.latestUnlock = new Date();
+  getRepository(Key)
+    .save(key)
+    .then(() => {
+      if (isProduction) {
+        spawn('python', ['./unlock_door.py']);
+      }
+      res.json({ success: true });
+    })
+    .catch(err => {
+      next(err);
+    });
 });
 
 // Route to register first or new key
@@ -94,10 +107,7 @@ router.post(
     body('name').notEmpty(),
     body('answer')
       .optional()
-      .isString(),
-    body('admin')
-      .isBoolean()
-      .optional()
+      .isString()
   ],
   validate,
   function(req: Request, res: Response, next: NextFunction): void {
@@ -108,7 +118,7 @@ router.post(
         .find({})
         .then(keys => {
           if (keys.length == 0) {
-            req.body.admin = true;
+            req.admin = true;
             return registerKey(req, res, next); // First key that is registered, bypass security
           }
           next(new UnauthorizedError('No registration permitted'));
@@ -137,7 +147,7 @@ router.post('/keys', [body('id').isString(), body('answer').isString()], validat
   keyRepo
     .find({ select: ['name', 'id', 'latestUnlock', 'unlocks', 'admin'] })
     .then(keys => {
-      res.json(keys);
+      res.json({ keys: keys });
     })
     .catch(err => {
       next(err);
@@ -159,10 +169,43 @@ router.post(
     keyRepo
       .delete({ id: reqParams.deleteId })
       .then(() => {
-        res.status(200).end();
+        res.json({ success: true });
       })
       .catch(err => {
         return next(err);
+      });
+  }
+);
+
+// Route to set admin rights of key
+router.post(
+  '/setAdmin',
+  [body('id').isString(), body('adminId').isString(), body('answer').isString(), body('status').isBoolean()],
+  validate,
+  verifyChallenge,
+  function(req: Request, res: Response, next: NextFunction): void {
+    const reqParams = matchedData(req) as AdminRequest;
+    const keyRepo = getRepository(Key);
+
+    if (!req.key?.admin) return next(new InsufficientRightsError()); // Admin check
+
+    keyRepo
+      .findOne({ id: reqParams.adminId })
+      .then(key => {
+        if (!key) return next(new KeyNotFoundError(reqParams.adminId));
+        key.admin = reqParams.status;
+
+        keyRepo
+          .save(key)
+          .then(() => {
+            res.json({ success: true });
+          })
+          .catch(err => {
+            next(err);
+          });
+      })
+      .catch(err => {
+        next(err);
       });
   }
 );

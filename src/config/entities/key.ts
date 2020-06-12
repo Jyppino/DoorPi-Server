@@ -63,7 +63,7 @@ export class Key {
   };
 
   // Verify response of challenge, returns UnauthorizedError if unsuccessful
-  verifyChallenge = function(answer: string, isRegistering: boolean): UnauthorizedError | undefined {
+  verifyChallenge = function(answer: string): UnauthorizedError | undefined {
     if (!(this.challenge && this.challengeExpiration)) return new UnauthorizedError('No challenge requested');
 
     const tokenExpired = new Date() > this.challengeExpiration; // Verify challenge expiration date
@@ -74,10 +74,6 @@ export class Key {
     if (tokenExpired) return new UnauthorizedError('Challenge expired');
     if (!answeredCorrectly) return new UnauthorizedError('Challenge answered incorrectly');
 
-    if (!isRegistering) {
-      this.unlocks += 1;
-      this.latestUnlock = new Date();
-    }
     return undefined;
   };
 }

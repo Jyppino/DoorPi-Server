@@ -39,11 +39,13 @@ router.post('/isRegistered', [body('publicKey').isString()], validate, function(
     .then(key => {
       const status: IsRegisteredResponse = {
         registered: false,
-        id: undefined
+        id: undefined,
+        admin: false
       };
       if (key) {
         status.registered = true;
         status.id = key.id;
+        status.admin = key.admin;
       }
       res.json(status);
     })
