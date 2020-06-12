@@ -92,6 +92,7 @@ router.post('/unlock', [body('id').isString(), body('answer').isString()], valid
   const key = req.key!;
   key.unlocks += 1;
   key.latestUnlock = new Date();
+  registerId = undefined;
   getRepository(Key)
     .save(key)
     .then(() => {
@@ -119,28 +120,27 @@ router.post(
   ],
   validate,
   function(req: Request, res: Response, next: NextFunction): void {
-    if (!registerId) {
-      const keyRepo = getRepository(Key);
+    const keyRepo = getRepository(Key);
 
-      keyRepo
-        .find({})
-        .then(keys => {
-          if (keys.length == 0) {
-            req.admin = true;
-            return registerKey(req, res, next); // First key that is registered, bypass security
-          }
-          next(new UnauthorizedError('No registration permitted'));
-        })
-        .catch(
-          /* istanbul ignore next */ err => {
-            next(err);
-          }
-        );
-    } else {
-      req.body.registerId = registerId;
-      registerId = undefined;
-      next();
-    }
+    keyRepo
+      .find({})
+      .then(keys => {
+        if (keys.length == 0) {
+          req.admin = true;
+          registerId = undefined;
+          return registerKey(req, res, next); // First key that is registered, bypass security
+        } else if (!registerId) {
+          return next(new UnauthorizedError('No registration permitted'));
+        }
+        req.body.registerId = registerId;
+        registerId = undefined;
+        next();
+      })
+      .catch(
+        /* istanbul ignore next */ err => {
+          next(err);
+        }
+      );
   },
   verifyChallenge,
   registerKey
