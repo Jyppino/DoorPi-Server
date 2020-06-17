@@ -135,7 +135,7 @@ router.post('/keys', [body('id').isString(), body('answer').isString()], validat
   if (!req.key?.admin) return next(new InsufficientRightsError());
   const keyRepo = getRepository(Key);
   keyRepo
-    .find({ select: ['name', 'id', 'latestUnlock', 'unlocks', 'admin'] })
+    .find({ select: ['name', 'id', 'latestUnlock', 'unlocks', 'admin', 'created'] })
     .then(keys => {
       res.json({ keys: keys });
     })

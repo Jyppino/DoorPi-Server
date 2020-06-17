@@ -503,6 +503,7 @@ describe('Challenge Authentication (E2E)', function() {
             expect(keys[0]).to.have.property('name');
             expect(keys[0]).to.have.property('unlocks');
             expect(keys[0]).to.have.property('latestUnlock');
+            expect(keys[0]).to.have.property('created');
             expect(keys[0]).to.have.property('admin');
             done();
           });
