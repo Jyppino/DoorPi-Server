@@ -71,7 +71,7 @@ router.post('/unlock', [body('id').isString(), body('answer').isString()], valid
       if (isProduction) {
         spawn('python', ['./unlock_door.py']);
       }
-      res.json({ success: true });
+      res.json({ success: true, name: key.name });
     })
     .catch(
       /* istanbul ignore next */ err => {

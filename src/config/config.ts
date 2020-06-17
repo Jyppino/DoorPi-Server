@@ -1,8 +1,8 @@
 import { homedir } from 'os';
 
 export const serverSettings = {
-  id: '3801af0b-d385-4273-9a78-a4104d90f82b',
-  name: 'Franselaan'
+  id: '678affea-200c-4a9c-b428-487bd6fe6559',
+  name: 'Development Server'
 };
 
 export const databasePath = {
