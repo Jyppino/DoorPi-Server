@@ -231,6 +231,7 @@ describe('Challenge Authentication (E2E)', function() {
             res.body.should.be.a('object');
             expect(res.body).to.have.property('success');
             expect(res.body['success']).to.be.true;
+            expect(res.body['name']).to.equal(testUser.name);
             done();
           });
       });
