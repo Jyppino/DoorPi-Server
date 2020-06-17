@@ -11,6 +11,7 @@ import {
   RegisterRequest,
   DeleteRequest,
   AdminRequest,
+  NameRequest,
   InsufficientRightsError
 } from '../models';
 
@@ -155,7 +156,7 @@ router.post(
     const reqParams = matchedData(req) as DeleteRequest;
     const keyRepo = getRepository(Key);
 
-    if (!req.key?.admin) return next(new InsufficientRightsError()); // Admin check
+    if (reqParams.id !== reqParams.deleteId && !req.key?.admin) return next(new InsufficientRightsError()); // Admin check
 
     keyRepo
       .delete({ id: reqParams.deleteId })
@@ -187,6 +188,41 @@ router.post(
       .then(key => {
         if (!key) return next(new KeyNotFoundError(reqParams.adminId));
         key.admin = reqParams.status;
+
+        keyRepo
+          .save(key)
+          .then(() => {
+            res.json({ success: true });
+          })
+          .catch(err => /* istanbul ignore next */ {
+            next(err);
+          });
+      })
+      .catch(
+        /* istanbul ignore next */ err => {
+          next(err);
+        }
+      );
+  }
+);
+
+// Route to set admin rights of key
+router.post(
+  '/setName',
+  [body('id').isString(), body('nameId').isString(), body('answer').isString(), body('name').isString()],
+  validate,
+  verifyChallenge,
+  function(req: Request, res: Response, next: NextFunction): void {
+    const reqParams = matchedData(req) as NameRequest;
+    const keyRepo = getRepository(Key);
+
+    if (reqParams.id !== reqParams.nameId && !req.key?.admin) return next(new InsufficientRightsError()); // Admin check
+
+    keyRepo
+      .findOne({ id: reqParams.nameId })
+      .then(key => {
+        if (!key) return next(new KeyNotFoundError(reqParams.nameId));
+        key.name = reqParams.name;
 
         keyRepo
           .save(key)

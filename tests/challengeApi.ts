@@ -383,11 +383,11 @@ describe('Challenge Authentication (E2E)', function() {
           });
       });
 
-      it('Should not be able to delete keys', function(done) {
+      it('Should not be able to delete other keys', function(done) {
         chai
           .request(app)
           .post('/delete')
-          .send({ id: testUser3.id, deleteId: testUser3.id, answer: testUser3.challenge })
+          .send({ id: testUser3.id, deleteId: testUser2.id, answer: testUser3.challenge })
           .end(function(err, res) {
             expect(err).to.be.null;
             res.should.have.status(401);
@@ -409,28 +409,64 @@ describe('Challenge Authentication (E2E)', function() {
           });
       });
 
-      // it('Should be able to delete itself', function(done) {
-      //   chai
-      //     .request(app)
-      //     .post('/delete')
-      //     .send({ id: testUser3.id, deleteId: testUser3.id, answer: testUser3.challenge })
-      //     .end(function(err, res) {
-      //       expect(err).to.be.null;
-      //       res.should.have.status(200);
+      it('Should be able to change name of itself', function(done) {
+        chai
+          .request(app)
+          .post('/setName')
+          .send({ id: testUser3.id, nameId: testUser3.id, answer: testUser3.challenge, name: 'New Name' })
+          .end(function(err, res) {
+            expect(err).to.be.null;
+            res.should.have.status(200);
 
-      //       getRepository(Key)
-      //         .findOne({
-      //           id: testUser3.id
-      //         })
-      //         .then(key => {
-      //           expect(key).to.be.undefined;
-      //           done();
-      //         })
-      //         .catch(err => {
-      //           done(err);
-      //         });
-      //     });
-      // });
+            getRepository(Key)
+              .findOne({
+                id: testUser3.id
+              })
+              .then(key => {
+                expect(key?.name).to.equal('New Name');
+                done();
+              })
+              .catch(err => {
+                done(err);
+              });
+          });
+      });
+
+      it('Should not be able to change name of other keys', function(done) {
+        chai
+          .request(app)
+          .post('/setName')
+          .send({ id: testUser3.id, nameId: testUser2.id, answer: testUser3.challenge, name: 'New Name' })
+          .end(function(err, res) {
+            expect(err).to.be.null;
+            res.should.have.status(401);
+            expect(res.body.message).to.equal(`Insufficient rights to perform operation`);
+            done();
+          });
+      });
+
+      it('Should be able to delete itself', function(done) {
+        chai
+          .request(app)
+          .post('/delete')
+          .send({ id: testUser3.id, deleteId: testUser3.id, answer: testUser3.challenge })
+          .end(function(err, res) {
+            expect(err).to.be.null;
+            res.should.have.status(200);
+
+            getRepository(Key)
+              .findOne({
+                id: testUser3.id
+              })
+              .then(key => {
+                expect(key).to.be.undefined;
+                done();
+              })
+              .catch(err => {
+                done(err);
+              });
+          });
+      });
     });
 
     describe('Admin Key', function() {
@@ -461,7 +497,7 @@ describe('Challenge Authentication (E2E)', function() {
             expect(err).to.be.null;
             res.should.have.status(200);
             const keys = res.body.keys;
-            expect(keys).to.be.length(3);
+            expect(keys).to.be.length(2);
             expect(keys[0]).to.have.property('id');
             expect(keys[0]).to.have.property('name');
             expect(keys[0]).to.have.property('unlocks');
@@ -509,6 +545,29 @@ describe('Challenge Authentication (E2E)', function() {
               })
               .then(key => {
                 expect(key?.admin).to.be.false;
+                done();
+              })
+              .catch(err => {
+                done(err);
+              });
+          });
+      });
+
+      it('Should be able to rename other keys', function(done) {
+        chai
+          .request(app)
+          .post('/setName')
+          .send({ id: testUser.id, nameId: testUser2.id, answer: testUser.challenge, name: 'Admin New Name' })
+          .end(function(err, res) {
+            expect(err).to.be.null;
+            res.should.have.status(200);
+
+            getRepository(Key)
+              .findOne({
+                id: testUser2.id
+              })
+              .then(key => {
+                expect(key?.name).to.equal('Admin New Name');
                 done();
               })
               .catch(err => {

@@ -30,3 +30,10 @@ export interface AdminRequest {
   answer: string;
   status: boolean;
 }
+
+export interface NameRequest {
+  id: string;
+  nameId: string;
+  answer: string;
+  name: string;
+}
