@@ -1,7 +1,7 @@
 import { homedir } from 'os';
 
 export const serverSettings = {
-  id: 'd4b940f4-3602-42d9-a336-57309f91aba5',
+  id: '3801af0b-d385-4273-9a78-a4104d90f82b',
   name: 'Franselaan'
 };
 
