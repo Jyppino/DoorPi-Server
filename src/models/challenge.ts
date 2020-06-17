@@ -6,7 +6,6 @@ export interface VerifyChallengeRequest {
 
 export interface ChallengeRequest {
   id: string;
-  register?: boolean;
 }
 
 export interface IsRegisteredRequest {
@@ -16,6 +15,7 @@ export interface IsRegisteredRequest {
 export interface RegisterRequest {
   publicKey: string;
   name: string;
+  answer?: string;
 }
 
 export interface DeleteRequest {

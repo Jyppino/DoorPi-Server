@@ -108,11 +108,11 @@ describe('Challenge Authentication (E2E)', function() {
         });
     });
 
-    it('Should be able to request registration with admin rights', function(done) {
+    it('Should be able to request challenge with admin rights', function(done) {
       chai
         .request(app)
         .post('/challenge')
-        .send({ id: testUser.id, register: true })
+        .send({ id: testUser.id })
         .end(function(err, res) {
           expect(err).to.be.null;
           res.should.have.status(200);
@@ -156,19 +156,6 @@ describe('Challenge Authentication (E2E)', function() {
             });
         });
     });
-
-    it('Should not be able to request registration without admin rights', function(done) {
-      chai
-        .request(app)
-        .post('/challenge')
-        .send({ id: testUser2.id, register: true })
-        .end(function(err, res) {
-          expect(err).to.be.null;
-          res.should.have.status(401);
-          expect(res.body.message).to.equal('Insufficient rights to perform operation');
-          done();
-        });
-    });
   });
 
   describe('Requesting challenge', function() {
@@ -176,7 +163,7 @@ describe('Challenge Authentication (E2E)', function() {
       chai
         .request(app)
         .post('/challenge')
-        .send({ id: testUser.id, register: false })
+        .send({ id: testUser.id })
         .end(function(err, res) {
           expect(err).to.be.null;
           res.should.have.status(200);
@@ -191,7 +178,7 @@ describe('Challenge Authentication (E2E)', function() {
       chai
         .request(app)
         .post('/challenge')
-        .send({ id: incorrectUser.id, register: false })
+        .send({ id: incorrectUser.id })
         .end(function(err, res) {
           expect(err).to.be.null;
           res.should.have.status(404);
@@ -275,7 +262,7 @@ describe('Challenge Authentication (E2E)', function() {
         chai
           .request(app)
           .post('/challenge')
-          .send({ id: testUser.id, register: false })
+          .send({ id: testUser.id })
           .end(function(err) {
             if (!err) done();
           });
@@ -369,7 +356,7 @@ describe('Challenge Authentication (E2E)', function() {
         chai
           .request(app)
           .post('/challenge')
-          .send({ id: testUser3.id, register: false })
+          .send({ id: testUser3.id })
           .end(function(err, res) {
             if (err) return done(err);
             const privateKey = forge.pki.privateKeyFromPem(testUser3.privateKey) as forge.pki.rsa.PrivateKey;
@@ -451,7 +438,7 @@ describe('Challenge Authentication (E2E)', function() {
         chai
           .request(app)
           .post('/challenge')
-          .send({ id: testUser.id, register: false })
+          .send({ id: testUser.id })
           .end(function(err, res) {
             if (err) return done(err);
             const privateKey = forge.pki.privateKeyFromPem(testUser.privateKey) as forge.pki.rsa.PrivateKey;

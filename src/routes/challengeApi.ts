@@ -3,7 +3,7 @@ import express = require('express');
 import { getRepository } from 'typeorm';
 import { Key } from '../config/entities';
 import { body, matchedData } from 'express-validator';
-import { validate, verifyChallenge } from '../middleware';
+import { validate, verifyChallenge, registerKey } from '../middleware';
 import {
   ChallengeRequest,
   KeyNotFoundError,
@@ -16,31 +16,8 @@ import {
 
 const router = express.Router();
 
-// Keeps track of which key is currently registering a new key
-let registerId: string | undefined = undefined;
-const registerKey = function(req: Request, res: Response, next: NextFunction): void {
-  const reqParams = matchedData(req) as RegisterRequest;
-  const keyRepo = getRepository(Key);
-
-  const newKey = new Key();
-  newKey.publicKey = reqParams.publicKey;
-  newKey.name = reqParams.name;
-  newKey.admin = req.admin ? req.admin : false;
-
-  keyRepo
-    .save(newKey)
-    .then(() => {
-      res.json({ success: true }); // Confirm registration
-    })
-    .catch(
-      /* istanbul ignore next */ err => {
-        next(err);
-      }
-    );
-};
-
 // Route to request challenge for key associated with URL parameter uid
-router.post('/challenge', [body('id').isString(), body('register').isBoolean()], validate, function(
+router.post('/challenge', [body('id').isString()], validate, function(
   req: Request,
   res: Response,
   next: NextFunction
@@ -55,11 +32,6 @@ router.post('/challenge', [body('id').isString(), body('register').isBoolean()],
 
       const challenge = key.generateChallenge(); // Generate challenge
       const encryptedChallenge = key.encryptWithPublicKey(challenge); // Encrypt challenge
-
-      if (reqParams.register) {
-        if (!key.admin) return next(new InsufficientRightsError()); // Admin check
-        registerId = key.id; // Store id of key that wants to register new key
-      }
 
       keyRepo
         .save(key)
@@ -92,7 +64,6 @@ router.post('/unlock', [body('id').isString(), body('answer').isString()], valid
   const key = req.key!;
   key.unlocks += 1;
   key.latestUnlock = new Date();
-  registerId = undefined;
   getRepository(Key)
     .save(key)
     .then(() => {
@@ -120,6 +91,7 @@ router.post(
   ],
   validate,
   function(req: Request, res: Response, next: NextFunction): void {
+    const reqParams = matchedData(req) as RegisterRequest;
     const keyRepo = getRepository(Key);
 
     keyRepo
@@ -127,14 +99,21 @@ router.post(
       .then(keys => {
         if (keys.length == 0) {
           req.admin = true;
-          registerId = undefined;
           return registerKey(req, res, next); // First key that is registered, bypass security
-        } else if (!registerId) {
-          return next(new UnauthorizedError('No registration permitted'));
         }
-        req.body.registerId = registerId;
-        registerId = undefined;
-        next();
+
+        keyRepo
+          .findOne({ admin: true, challenge: reqParams.answer })
+          .then(key => {
+            if (!key) return next(new UnauthorizedError('No registration permitted'));
+            req.body.registerId = key.id;
+            next();
+          })
+          .catch(
+            /* istanbul ignore next */ err => {
+              next(err);
+            }
+          );
       })
       .catch(
         /* istanbul ignore next */ err => {
