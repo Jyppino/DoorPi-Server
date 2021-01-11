@@ -1,4 +1,4 @@
-# DoorPi Server
+# DoorPi Server NOT MAINTAINED
 
 Repository for the server side of the DoorPi project.
 
